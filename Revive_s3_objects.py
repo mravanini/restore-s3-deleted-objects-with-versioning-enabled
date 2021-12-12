@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+# In[ ]:
 
 
 import boto3
@@ -68,17 +69,35 @@ def revive_object(bucket, object_key):
         logger.error("Couldn't get any version info for %s.", object_key)
         
 
-        
 bucket = s3.Bucket(bucket_name)        
 
-all_objects = s3.meta.client.list_object_versions(Bucket=bucket.name)
+is_trunckated = True
+next_key_marker = ""
+next_version_id_marker = ""
 
-all_versions = all_objects['Versions']
+while is_trunckated:
+    
+    if next_key_marker:
+    
+        all_objects = s3.meta.client.list_object_versions(Bucket=bucket.name, KeyMarker=next_key_marker, VersionIdMarker = next_version_id_marker)
+        
+    else:
+        
+        all_objects = s3.meta.client.list_object_versions(Bucket=bucket.name)
+        
 
-for version in all_versions:
-      revive_object(bucket, version['Key'])
+    all_versions = all_objects['Versions']
+
+    for version in all_versions:
+        revive_object(bucket, version['Key'])
+        
+    is_trunckated = all_objects['IsTruncated']
+    if is_trunckated:
+        next_key_marker = all_objects['NextKeyMarker']
+        next_version_id_marker = all_objects['NextVersionIdMarker']
 
 
+# In[ ]:
 
 
 
